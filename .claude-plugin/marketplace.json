@@ -1,0 +1,6 @@
+{
+  "name": "todo-pane",
+  "description": "A persistent TODO list for Claude Code, in a pane beside the chat.",
+  "owner": { "name": "wlsdnen", "url": "https://github.com/wlsdnen" },
+  "plugins": [{ "name": "todo", "source": "./" }]
+}

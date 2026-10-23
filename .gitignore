@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+.claude-plugin/types/
+.mcpb-cache/
+plan*.html
+.omc/

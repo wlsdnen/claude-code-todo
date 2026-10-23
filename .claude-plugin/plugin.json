@@ -1,0 +1,11 @@
+{
+  "name": "todo",
+  "version": "0.1.0",
+  "description": "A persistent TODO list in a pane, with /todo and a model tool",
+  "author": { "name": "wlsdnen", "url": "https://github.com/wlsdnen" },
+  "homepage": "https://github.com/wlsdnen/claude-code-todo",
+  "repository": "https://github.com/wlsdnen/claude-code-todo",
+  "license": "MIT",
+  "keywords": ["todo", "task", "pane", "productivity", "mod"],
+  "types": "./types/index.d.ts"
+}
