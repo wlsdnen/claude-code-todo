@@ -65,6 +65,18 @@ Put them at the end of the text.
 
 The plugin gives Claude one tool, `todo`. Its description tells Claude to use it only when you ask about your TODO list, not to add items on its own. This tool is separate from Claude's built-in session task list.
 
+## What it runs, reads and writes
+
+The plugin makes no network requests and sends no data anywhere.
+
+- **Runs** `git rev-parse --show-toplevel` in the session's folder, to find the project root.
+- **Reads** the environment variables `HOME`, `LC_ALL`, `LC_MESSAGES` and `LANG`, and the Claude Code `language` setting, to find the files and pick the UI language.
+- **Reads and writes** `~/.claude/todo.md` and `TODO.md` at the project root. It creates them on the first add.
+- **Stores** one value in Claude Code's plugin store: whether the pane was open.
+- **Watches** Claude's Write and Edit tool calls only to redraw the pane when one of the two files changes.
+
+See [PRIVACY.md](PRIVACY.md).
+
 ## File format
 
 ```markdown
