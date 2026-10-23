@@ -6,7 +6,7 @@ Keep a TODO list next to your Claude Code chat. Add, finish, edit and remove ite
 
 ## Features
 
-- **A pane beside the chat** with two tabs: a global list and a list for the current project.
+- **A pane beside the chat** with two tabs: a global list and a list for the current project. Inside a git repo the project list is the default; elsewhere the global list is.
 - **A one-line summary above the prompt**: open items, the next one, and overdue items.
 - **`/todo` runs instantly.** It changes the list without a model turn.
 - **Claude can manage the list when you ask.** For example: "add the rollback script review to my TODO".
@@ -44,14 +44,15 @@ Use `ctrl+x tab` or a click to move focus into the pane.
 
 ```
 /todo                              open or close the pane
-/todo add Ship docs !high fri      add to the global list
-/todo -p add Fix flaky test +2d    add to the project list
+/todo add Fix flaky test +2d       add to the default list
+/todo -g add Ship docs !high fri   add to the global list
+/todo -p add Write notes           add to the project list
 /todo done 2                       mark item 2 done
 /todo edit 2 Ship docs v2 !low     change item 2
 /todo rm 3                         remove item 3
 ```
 
-Item numbers follow the order on screen.
+Item numbers follow the order on screen. Without `-p` or `-g`, a command uses the default list: the project list inside a git repo, else the global list. The pane opens on the same list, and Claude's tool uses it too.
 
 ### Priority and due dates
 

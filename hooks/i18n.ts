@@ -20,12 +20,12 @@ const KO = {
   opened: 'TODO pane을 열었습니다.',
   closed: 'TODO pane을 닫았습니다.',
   missing: (scope: string, n: number) => `${scope} 목록에 ${n}번 항목이 없습니다.`,
-  usageAdd: '사용법: /todo [-p] add <내용> [!high|!mid|!low] [마감]',
-  usageDoneRm: '사용법: /todo [-p] done|rm <번호>',
-  usageEdit: '사용법: /todo [-p] edit <번호> <내용>',
+  usageAdd: '사용법: /todo [-p|-g] add <내용> [!high|!mid|!low] [마감]',
+  usageDoneRm: '사용법: /todo [-p|-g] done|rm <번호>',
+  usageEdit: '사용법: /todo [-p|-g] edit <번호> <내용>',
   unknown: (verb: string) => `알 수 없는 명령: ${verb}. add, done, rm, edit 중 하나를 쓰세요.`,
-  description: 'TODO 목록: pane 열기/닫기, add · done · rm · edit (-p: 프로젝트)',
-  argumentHint: '[-p] [add <내용> [!high|!mid|!low] [마감] | done <n> | rm <n> | edit <n> <내용>]',
+  description: 'TODO 목록: pane 열기/닫기, add · done · rm · edit (-p 프로젝트, -g 전역)',
+  argumentHint: '[-p|-g] [add <내용> [!high|!mid|!low] [마감] | done <n> | rm <n> | edit <n> <내용>]',
 }
 
 export type Strings = typeof KO
@@ -50,12 +50,12 @@ const EN: Strings = {
   opened: 'Opened the TODO pane.',
   closed: 'Closed the TODO pane.',
   missing: (scope, n) => `The ${scope.toLowerCase()} list has no item ${n}.`,
-  usageAdd: 'Usage: /todo [-p] add <text> [!high|!mid|!low] [due]',
-  usageDoneRm: 'Usage: /todo [-p] done|rm <n>',
-  usageEdit: 'Usage: /todo [-p] edit <n> <text>',
+  usageAdd: 'Usage: /todo [-p|-g] add <text> [!high|!mid|!low] [due]',
+  usageDoneRm: 'Usage: /todo [-p|-g] done|rm <n>',
+  usageEdit: 'Usage: /todo [-p|-g] edit <n> <text>',
   unknown: verb => `Unknown command: ${verb}. Use add, done, rm or edit.`,
-  description: 'TODO list: open/close the pane, add · done · rm · edit (-p: project)',
-  argumentHint: '[-p] [add <text> [!high|!mid|!low] [due] | done <n> | rm <n> | edit <n> <text>]',
+  description: 'TODO list: open/close the pane, add · done · rm · edit (-p project, -g global)',
+  argumentHint: '[-p|-g] [add <text> [!high|!mid|!low] [due] | done <n> | rm <n> | edit <n> <text>]',
 }
 
 export const STRINGS: Record<Lang, Strings> = { ko: KO, en: EN }

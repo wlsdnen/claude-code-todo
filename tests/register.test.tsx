@@ -5,7 +5,8 @@ const NOW = new Date(2026, 9, 23, 9).getTime()
 const GLOBAL = '/home/u/.claude/todo.md'
 const PROJECT = '/repo/TODO.md'
 
-function world(on: On, files: Record<string, string>, language = 'Korean', root = '/repo') {
+// root null: the session runs outside any git repo.
+function world(on: On, files: Record<string, string>, language = 'Korean', root: string | null = '/repo') {
   mock.clock(on, { now: NOW })
   mock.store(on)
   mock.env(on, { HOME: '/home/u', LANG: 'en_US.UTF-8' })
@@ -16,8 +17,10 @@ function world(on: On, files: Record<string, string>, language = 'Korean', root 
     files[e.path] = e.text
     return { value: undefined }
   })
-  on('session.cwd', () => ({ value: '/repo/sub' }))
-  on('process.run', () => ({ value: { exitCode: 0, stdout: `${root}\n`, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('session.cwd', () => ({ value: root ? '/repo/sub' : '/home/u/notes' }))
+  on('process.run', () => ({
+    value: { exitCode: root ? 0 : 128, stdout: root ? `${root}\n` : '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+  }))
   on('command.register', () => ({ value: { command: 'todo' } }))
   on('tool.register', () => ({ value: { tool: 'mcp__todo__todo' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
@@ -41,28 +44,29 @@ const BAND = {
   props: { hasSurvey: false, isWorking: false, maxRows: 5, bodyColumns: 80, scroll: { offset: 0, bodyRows: 5 }, view: {} },
 } as const
 
-test('/todo writes the global and the project file with no model turn', async ($, on) => {
+test('/todo writes the project file by default in a repo, and the global file with -g', async ($, on) => {
   const files: Record<string, string> = {}
   world(on, files)
   await $.session.start({ cwd: '/repo/sub', surface: 'terminal', isInteractive: true })
 
-  const added = await $.command.run(run('add 배포 체크 !high 금요일'))
+  const added = await $.command.run(run('-g add 배포 체크 !high 금요일'))
   expect(added.text).toContain('배포 체크')
   expect(files[GLOBAL]).toBe('- [ ] 배포 체크 !high due:2026-10-30\n')
 
-  await $.command.run(run('-p add 블로그 초안'))
+  await $.command.run(run('add 블로그 초안'))
   expect(files[PROJECT]).toBe('- [ ] 블로그 초안\n')
 
-  await $.command.run(run('done 1'))
+  await $.command.run(run('-g done 1'))
   expect(files[GLOBAL]).toBe('- [x] 배포 체크 !high due:2026-10-30\n')
 
-  const missing = await $.command.run(run('rm 9'))
+  const missing = await $.command.run(run('-g rm 9'))
   expect(missing.text).toContain('9번')
+  expect(files[PROJECT]).toBe('- [ ] 블로그 초안\n')
 })
 
-test('the model tool adds and lists items', async ($, on) => {
+test('outside a git repo the model tool adds to the global list', async ($, on) => {
   const files: Record<string, string> = { [GLOBAL]: '# 내 할 일\n- [ ] 기존 항목\n' }
-  world(on, files)
+  world(on, files, 'Korean', null)
   await $.session.start({ cwd: '/repo/sub', surface: 'terminal', isInteractive: true })
 
   const ran = await $.tool.call({ tool: 'mcp__todo__todo', action: 'add', text: '롤백 검토', priority: 'high', due: 'tomorrow' } as never)
@@ -74,7 +78,7 @@ test('the model tool adds and lists items', async ($, on) => {
 
 test('the pane lists, selects, finishes and adds; the band counts', async ($, on) => {
   const files: Record<string, string> = { [GLOBAL]: '- [ ] 늦은 일 due:2026-10-20\n- [ ] 급한 일 !high\n' }
-  world(on, files)
+  world(on, files, 'Korean', null)
 
   for (const surface of ['terminal', 'desktop'] as const) {
     const band = await $.ui.mount({ ...BAND, surface })
@@ -130,9 +134,9 @@ test('UI text follows the language: English when the setting is English', async 
   world(on, files, 'English')
   await $.session.start({ cwd: '/repo/sub', surface: 'terminal', isInteractive: true })
 
-  expect((await $.command.run(run('rm 9'))).text).toBe('The global list has no item 9.')
+  expect((await $.command.run(run('-g rm 9'))).text).toBe('The global list has no item 9.')
   expect((await $.command.run(run('frobnicate'))).text).toBe('Unknown command: frobnicate. Use add, done, rm or edit.')
-  expect((await $.command.run(run('add 회의 준비 내일'))).text).toContain('(Global)')
+  expect((await $.command.run(run('-g add 회의 준비 내일'))).text).toContain('(Global)')
 
   const band = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect((await band.find({ type: 'Text', text: /2 left/ }))?.text).toContain('next: late')
@@ -149,8 +153,10 @@ test('UI text is Korean when the setting is Korean', async ($, on) => {
   world(on, {})
   await $.session.start({ cwd: '/repo/sub', surface: 'terminal', isInteractive: true })
 
-  expect((await $.command.run(run('rm 9'))).text).toBe('전역 목록에 9번 항목이 없습니다.')
+  expect((await $.command.run(run('-g rm 9'))).text).toBe('전역 목록에 9번 항목이 없습니다.')
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  // In a repo the pane opens on the project tab.
+  expect((await ui.find({ key: 'tab-project' }))?.props.variant).toBe('primary')
   expect((await ui.find({ key: 'tab-project' }))?.text).toContain('프로젝트 (repo)')
   expect(await ui.find({ type: 'Text', text: /비어 있음/ })).toBeDefined()
   await ui.unmount()

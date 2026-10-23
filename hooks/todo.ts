@@ -143,10 +143,11 @@ export function parseAddArgs(input: string, today: Date): Fields {
 
 const toIndex = (s: string | undefined): number => (s && /^\d+$/.test(s) ? Number(s) : NaN)
 
-export function parseCommand(args: string, today: Date): Command {
+// -p picks the project list and -g the global one; with neither, fallback.
+export function parseCommand(args: string, today: Date, fallback: Scope): Command {
   const words = args.trim().split(/\s+/).filter(Boolean)
-  const scope: Scope = words.includes('-p') ? 'project' : 'global'
-  const [verb, ...rest] = words.filter(w => w !== '-p')
+  const scope: Scope = words.includes('-p') ? 'project' : words.includes('-g') ? 'global' : fallback
+  const [verb, ...rest] = words.filter(w => w !== '-p' && w !== '-g')
   if (!verb) return { kind: 'toggle' }
   if (verb === 'add') {
     const fields = parseAddArgs(rest.join(' '), today)

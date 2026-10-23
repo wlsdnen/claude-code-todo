@@ -73,15 +73,17 @@ test('add arguments read priority and due only at the end', async () => {
 })
 
 test('commands parse scope, verb and number', async () => {
-  expect(parseCommand('', TODAY)).toEqual({ kind: 'toggle' })
-  expect(parseCommand('-p add 배포 체크 !high', TODAY)).toEqual({ kind: 'add', scope: 'project', fields: { text: '배포 체크', priority: 'high' } })
-  expect(parseCommand('done 2', TODAY)).toEqual({ kind: 'done', scope: 'global', n: 2 })
-  expect(parseCommand('rm 3 -p', TODAY)).toEqual({ kind: 'rm', scope: 'project', n: 3 })
-  expect(parseCommand('edit 1 새 내용 내일', TODAY)).toEqual({ kind: 'edit', scope: 'global', n: 1, fields: { text: '새 내용', due: '2026-10-24' } })
-  expect(parseCommand('done x', TODAY)).toEqual({ kind: 'error', code: 'usageDoneRm' })
-  expect(parseCommand('edit', TODAY)).toEqual({ kind: 'error', code: 'usageEdit' })
-  expect(parseCommand('add', TODAY)).toEqual({ kind: 'error', code: 'usageAdd' })
-  expect(parseCommand('frobnicate', TODAY)).toEqual({ kind: 'unknown', verb: 'frobnicate' })
+  expect(parseCommand('', TODAY, 'global')).toEqual({ kind: 'toggle' })
+  expect(parseCommand('-p add 배포 체크 !high', TODAY, 'global')).toEqual({ kind: 'add', scope: 'project', fields: { text: '배포 체크', priority: 'high' } })
+  expect(parseCommand('done 2', TODAY, 'global')).toEqual({ kind: 'done', scope: 'global', n: 2 })
+  expect(parseCommand('rm 3 -p', TODAY, 'global')).toEqual({ kind: 'rm', scope: 'project', n: 3 })
+  expect(parseCommand('edit 1 새 내용 내일', TODAY, 'global')).toEqual({ kind: 'edit', scope: 'global', n: 1, fields: { text: '새 내용', due: '2026-10-24' } })
+  expect(parseCommand('done x', TODAY, 'global')).toEqual({ kind: 'error', code: 'usageDoneRm' })
+  expect(parseCommand('edit', TODAY, 'global')).toEqual({ kind: 'error', code: 'usageEdit' })
+  expect(parseCommand('add', TODAY, 'global')).toEqual({ kind: 'error', code: 'usageAdd' })
+  expect(parseCommand('frobnicate', TODAY, 'global')).toEqual({ kind: 'unknown', verb: 'frobnicate' })
+  expect(parseCommand('done 2', TODAY, 'project')).toEqual({ kind: 'done', scope: 'project', n: 2 })
+  expect(parseCommand('-g done 2', TODAY, 'project')).toEqual({ kind: 'done', scope: 'global', n: 2 })
 })
 
 test('the language setting wins over the locale', async () => {

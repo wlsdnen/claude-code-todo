@@ -22,7 +22,8 @@ const PANE = 'todo'
 const OPEN_KEY = 'paneOpen'
 const TODO_FILE = /(^|\/)(todo|TODO)\.md$/
 
-const tab = atom({ plugin: 'todo', key: 'tab' } as const, 'global' as Scope)
+// null until the user picks a tab: the pane then opens on defaultScope.
+const tab = atom({ plugin: 'todo', key: 'tab' } as const, null as Scope | null)
 const selected = atom({ plugin: 'todo', key: 'selected' } as const, null as number | null)
 const editing = atom({ plugin: 'todo', key: 'editing' } as const, false)
 
@@ -40,16 +41,21 @@ async function strings($: $, isFresh = false): Promise<Strings> {
   return stringsCache
 }
 
-let rootCache: { cwd: string; root: string } | undefined
+let rootCache: { cwd: string; root: string; isRepo: boolean } | undefined
 
-async function projectRoot($: $): Promise<string> {
+async function locate($: $) {
   const cwd = await $.session.cwd()
-  if (rootCache?.cwd === cwd) return rootCache.root
+  if (rootCache?.cwd === cwd) return rootCache
   const git = await $.process.run(['git', 'rev-parse', '--show-toplevel'], { cwd })
-  const root = git.exitCode === 0 && git.stdout.trim() ? git.stdout.trim() : cwd
-  rootCache = { cwd, root }
-  return root
+  const top = git.exitCode === 0 ? git.stdout.trim() : ''
+  rootCache = { cwd, root: top || cwd, isRepo: !!top }
+  return rootCache
 }
+
+const projectRoot = async ($: $) => (await locate($)).root
+
+// The list used when no scope is named: the project's inside a git repo, else the global one.
+const defaultScope = async ($: $): Promise<Scope> => ((await locate($)).isRepo ? 'project' : 'global')
 
 async function pathOf($: $, scope: Scope): Promise<string> {
   if (scope === 'project') return `${await projectRoot($)}/TODO.md`
@@ -146,7 +152,7 @@ async function position($: $, scope: Scope, todo: Todo): Promise<number> {
 }
 
 const TOOL_DESCRIPTION = [
-  "The user's persistent TODO list, kept in Markdown files: ~/.claude/todo.md (scope 'global', the default) and TODO.md at the project's git root (scope 'project').",
+  "The user's persistent TODO list, kept in Markdown files: ~/.claude/todo.md (scope 'global') and TODO.md at the project's git root (scope 'project'). Without scope, the tool uses 'project' inside a git repo and 'global' elsewhere.",
   'This is NOT the session task list (TodoWrite). Use this tool only when the user asks to see or change their TODO list; never add items on your own.',
   'Items are numbered in display order (open before done, then priority high > mid > low, then due date). Call list first to get the numbers.',
   "due takes the same words as /todo: 오늘, 내일, 모레, 금요일, today, tomorrow, fri, next week, +3d, +2w, 10/25, 2026-10-25. An empty string clears due or memo.",
@@ -179,7 +185,7 @@ type ToolInput = {
 }
 
 async function runTool($: $, input: ToolInput): Promise<string> {
-  const scope = input.scope ?? 'global'
+  const scope = input.scope ?? (await defaultScope($))
   const now = await today($)
   const due = input.due ? parseDue(input.due, now) : undefined
   if (input.due && !due) return `Unknown due date: ${input.due}`
@@ -218,7 +224,7 @@ export const register: Register = on => {
   on('command.run', { command: 'todo' }, async ($, e) => {
     const now = await today($)
     const s = await strings($)
-    const cmd = parseCommand(e.args, now)
+    const cmd = parseCommand(e.args, now, await defaultScope($))
     if (cmd.kind === 'toggle') return { text: await togglePane($, s) }
     if (cmd.kind === 'error') return { text: s[cmd.code] }
     if (cmd.kind === 'unknown') return { text: s.unknown(cmd.verb) }
@@ -266,7 +272,7 @@ export const register: Register = on => {
     const Input = 'Input' in elements ? elements.Input : undefined
     const now = await today($)
     const s = await strings($)
-    const scope = await read($, tab)
+    const scope = (await read($, tab)) ?? (await defaultScope($))
     const picked = await read($, selected)
     const isEditing = await read($, editing)
     const items = await sorted($, scope)

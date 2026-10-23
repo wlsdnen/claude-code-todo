@@ -1,6 +1,6 @@
 {
   "name": "todo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A persistent TODO list in a pane, with /todo and a model tool",
   "author": { "name": "wlsdnen", "url": "https://github.com/wlsdnen" },
   "homepage": "https://github.com/wlsdnen/claude-code-todo",
